@@ -106,31 +106,16 @@ async function fallbackAI(request: AIRequest, originalError: any): Promise<AIRes
             case 'search':
                 // Gemini failed, try DeepSeek as last resort (without multimodal)
                 const deepseekFallback = await generateWithDeepSeek(prompt, systemPrompt);
-                return { content: deepseekFallback, model: 'deepseek', fallback: true };
-
-            default:
-                throw originalError;
-        }
-    } catch (fallbackError) {
-        console.error('Fallback also failed:', fallbackError);
-        throw new Error(`All AI models failed. Original: ${originalError.message}, Fallback: ${fallbackError.message}`);
-    }
-}
-
-/**
- * Generate structured output with schema validation
- */
-export async function generateStructured<T>(
-    prompt: string,
-    systemPrompt: string,
-    schema?: any
-): Promise<T> {
-    try {
-        return await generateStructuredOutput<T>(prompt, systemPrompt, schema);
-    } catch (error) {
-        console.error('Structured generation failed:', error);
-        // Fallback to Gemini with JSON parsing
-        const result = await generateWithGemini(`${systemPrompt}\n\n${prompt}\n\nRespond with valid JSON only.`);
-        return JSON.parse(result) as T;
-    }
-}
+                prompt: string,
+                    systemPrompt: string,
+                        schema ?: any
+): Promise < T > {
+                    try {
+                        return await generateStructuredOutput<T>(prompt, systemPrompt, schema);
+                    } catch(error) {
+                        console.error('Structured generation failed:', error);
+                        // Fallback to Gemini with JSON parsing
+                        const result = await generateWithGemini(`${systemPrompt}\n\n${prompt}\n\nRespond with valid JSON only.`);
+                        return JSON.parse(result) as T;
+                    }
+                }
