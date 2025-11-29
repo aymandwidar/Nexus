@@ -80,7 +80,7 @@ export async function orchestrateAI(request: AIRequest): Promise<AIResponse> {
 /**
  * Fallback strategy when primary model fails
  */
-async function fallbackAI(request: AIRequest, originalError: any): Promise<AIResponse> {
+async function fallbackAI(request: AIRequest, originalError: unknown): Promise<AIResponse> {
     const { task, prompt, systemPrompt } = request;
 
     console.log(`Attempting fallback for task: ${task}`);
@@ -106,16 +106,33 @@ async function fallbackAI(request: AIRequest, originalError: any): Promise<AIRes
             case 'search':
                 // Gemini failed, try DeepSeek as last resort (without multimodal)
                 const deepseekFallback = await generateWithDeepSeek(prompt, systemPrompt);
-                prompt: string,
-                    systemPrompt: string,
-                        schema ?: any
-): Promise < T > {
-                    try {
-                        return await generateStructuredOutput<T>(prompt, systemPrompt, schema);
-                    } catch(error) {
-                        console.error('Structured generation failed:', error);
-                        // Fallback to Gemini with JSON parsing
-                        const result = await generateWithGemini(`${systemPrompt}\n\n${prompt}\n\nRespond with valid JSON only.`);
-                        return JSON.parse(result) as T;
-                    }
-                }
+                return { content: deepseekFallback, model: 'deepseek', fallback: true };
+
+            default:
+                throw originalError;
+        }
+    } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+        const fallbackErrorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
+        const originalErrorMessage = originalError instanceof Error ? originalError.message : 'Unknown error';
+        throw new Error(`All AI models failed. Original: ${originalErrorMessage}, Fallback: ${fallbackErrorMessage}`);
+    }
+}
+
+/**
+ * Generate structured output with schema validation
+ */
+export async function generateStructured<T>(
+    prompt: string,
+    systemPrompt: string,
+    schema?: any
+): Promise<T> {
+    try {
+        return await generateStructuredOutput<T>(prompt, systemPrompt, schema);
+    } catch (error) {
+        console.error('Structured generation failed:', error);
+        // Fallback to Gemini with JSON parsing
+        const result = await generateWithGemini(`${systemPrompt}\n\n${prompt}\n\nRespond with valid JSON only.`);
+        return JSON.parse(result) as T;
+    }
+}
