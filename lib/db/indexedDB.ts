@@ -186,7 +186,7 @@ export async function getPreferences(): Promise<UserPreferences | undefined> {
 // === UTILITY FUNCTIONS ===
 export async function clearAllData(): Promise<void> {
     const db = await getDB();
-    const stores: (keyof NexusDB)[] = ['transactions', 'budgets', 'goals', 'subscriptions', 'alerts', 'challenges'];
+    const stores = ['transactions', 'budgets', 'goals', 'subscriptions', 'alerts', 'challenges'] as const;
 
     for (const store of stores) {
         await db.clear(store);

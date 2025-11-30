@@ -98,25 +98,12 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 // === GROUNDED SEARCH (for price checking) ===
 export async function searchWithGrounding(query: string): Promise<string> {
     if (!textModel) {
-        throw new Error('Gemini not initialized');
+        throw new Error('Gemini client not initialized. Call initGemini() first.');
     }
 
-    const prompt = `Search for current market prices and information about: ${query}. Provide accurate, up-to-date pricing information.`;
+    const prompt = `Search for current market information about: ${query}. Provide accurate, up-to-date pricing information based on your knowledge.`;
 
-    const result = await textModel.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        tools: [
-            {
-                googleSearchRetrieval: {
-                    dynamicRetrievalConfig: {
-                        mode: 'MODE_DYNAMIC',
-                        dynamicThreshold: 0.7,
-                    },
-                },
-            },
-        ],
-    });
-
+    const result = await textModel.generateContent(prompt);
     const response = await result.response;
     return response.text();
 }

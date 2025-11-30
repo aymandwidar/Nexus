@@ -24,10 +24,10 @@ export async function generateWithGroq(
 ): Promise<string> {
     const client = getGroqClient();
 
-    const messages: any[] = [
-        ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+        ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
         ...(conversationHistory || []),
-        { role: 'user', content: prompt },
+        { role: 'user' as const, content: prompt },
     ];
 
     const response = await client.chat.completions.create({
@@ -47,12 +47,14 @@ export async function streamWithGroq(
 ): Promise<string> {
     const client = getGroqClient();
 
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+        ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+        { role: 'user' as const, content: prompt },
+    ];
+
     const stream = await client.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
-        messages: [
-            ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-            { role: 'user', content: prompt },
-        ],
+        messages,
         temperature: 0.8,
         max_tokens: 1500,
         stream: true,
